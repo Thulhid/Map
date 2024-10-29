@@ -1,0 +1,135 @@
+:root {
+  --color-brand--1: #707da9;
+  --color-brand--2: #fc757c;
+
+  --color-dark--1: #2d3439;
+  --color-dark--2: #42484d;
+  --color-light--1: #aaa;
+  --color-light--2: #ececec;
+  --color-light--3: rgb(214, 222, 224);
+  --color-light--4: #c9d2e3;
+  --color-light--5: #b5bcc6;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Manrope", sans-serif;
+  font-weight: 4000;
+  line-height: 1.8;
+}
+
+.logo {
+  margin-left: 90px;
+  margin-bottom: 10px;
+  height: 5.2rem;
+  align-self: center;
+  /* 
+  height: 5.2rem;
+  grid-column: 1;
+  grid-row: 2;
+  grid-row: 1; */
+}
+
+section {
+  display: grid;
+  background-color: var(--color-light--4);
+  grid-template-columns: 300px auto;
+  grid-template-rows: 800px;
+}
+.form {
+  background-color: var(--color-light--5);
+  border-radius: 5px;
+  padding: 1.5rem 0.75rem;
+  margin-bottom: 1.75rem;
+
+  display: grid;
+
+  grid-template-columns: 1fr;
+  gap: 1rem 2.5rem;
+
+  /* Match height and activity boxes */
+  height: 25rem;
+  transition: all 0.5s, transform 1ms;
+}
+.form__row {
+  display: flex;
+  align-items: center;
+}
+.form__row--hidden {
+  display: none;
+}
+.form.hidden {
+  transform: translateY(-30rem);
+  height: 0;
+  margin-bottom: 0;
+  opacity: 0;
+}
+.form__input {
+  width: 100%;
+  padding: 0.1rem 1.1rem;
+  font-family: inherit;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 2px;
+  background-color: var(--color-light--3);
+  transition: all 0.2s;
+}
+.form__label {
+  font-weight: bold;
+  padding-right: 10px;
+}
+.section {
+  grid-column: 1;
+}
+/* xx:nth-child(1) {
+  background-color: lightblue;
+} */
+
+#map:nth-child(2) {
+  background-color: #132c4b;
+}
+
+.leaflet-popup .leaflet-popup-tip {
+  background-color: #2d3439;
+}
+
+.leaflet-popup .leaflet-popup-content-wrapper {
+  background-color: #2d3439;
+  color: var(--color-light--2);
+}
+.leaflet-popup .leaflet-popup-content {
+  font-size: 1rem;
+}
+.working-popup .leaflet-popup-content-wrapper {
+  border-left: 5px solid var(--color-brand--1);
+}
+
+.running-popup .leaflet-popup-content-wrapper {
+  border-left: 5px solid var(--color-brand--2);
+}
+
+.form__btn {
+  padding: 10px;
+  justify-self: center;
+  background-color: #444;
+  color: #ddd;
+  width: 140px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 10px;
+}
+.form__btn:hover {
+  color: #444;
+  background-color: #ddd;
+  transition: 0.5s;
+  /* font-size: 19px; */
+  /* padding: 25px; */
+  font-weight: bold;
+}
