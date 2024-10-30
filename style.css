@@ -9,6 +9,7 @@
   --color-light--3: rgb(214, 222, 224);
   --color-light--4: #c9d2e3;
   --color-light--5: #b5bcc6;
+  --color-dark--3: #9b2e2e;
 }
 
 * {
@@ -17,50 +18,77 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 62.5%;
+}
+
 body {
   font-family: "Manrope", sans-serif;
-  font-weight: 4000;
-  line-height: 1.8;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-light--2);
+  background-color: #fff;
+  height: 100vh;
+  display: flex;
+}
+
+/* Main layout */
+section {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+/* Sidebar styling */
+.sidebar {
+  flex-basis: 500px; /* Sidebar fixed width */
+  max-width: 500px;
+  min-width: 500px;
+  background-color: var(--color-dark--1);
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .logo {
-  margin-left: 90px;
   margin-bottom: 10px;
   height: 5.2rem;
   align-self: center;
-  /* 
-  height: 5.2rem;
-  grid-column: 1;
-  grid-row: 2;
-  grid-row: 1; */
 }
 
-section {
-  display: grid;
-  background-color: var(--color-light--4);
-  grid-template-columns: 300px auto;
-  grid-template-rows: 800px;
+.performs {
+  list-style: none;
+  overflow-y: scroll;
+  height: 77vh;
 }
+
+.performs::-webkit-scrollbar {
+  width: 0;
+}
+
+/* Form styling */
 .form {
-  background-color: var(--color-light--5);
+  background-color: var(--color-dark--2);
   border-radius: 5px;
-  padding: 1.5rem 0.75rem;
+  padding: 1.5rem 2.75rem;
   margin-bottom: 1.75rem;
-
   display: grid;
-
-  grid-template-columns: 1fr;
-  gap: 1rem 2.5rem;
-
-  /* Match height and activity boxes */
-  height: 25rem;
-  transition: all 0.5s, transform 1ms;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2.5rem;
+  height: auto;
+  transition: all 0.5s;
 }
+
 .form__row {
   display: flex;
   align-items: center;
 }
+
 .form__row--hidden {
+  display: none;
+}
+.hidden {
   display: none;
 }
 .form.hidden {
@@ -69,9 +97,10 @@ section {
   margin-bottom: 0;
   opacity: 0;
 }
+
 .form__input {
   width: 100%;
-  padding: 0.1rem 1.1rem;
+  padding: 0.8rem;
   font-family: inherit;
   font-size: 1.1rem;
   border: none;
@@ -79,19 +108,38 @@ section {
   background-color: var(--color-light--3);
   transition: all 0.2s;
 }
+
 .form__label {
+  font-size: 1.3rem;
   font-weight: bold;
   padding-right: 10px;
 }
-.section {
-  grid-column: 1;
-}
-/* xx:nth-child(1) {
-  background-color: lightblue;
-} */
 
-#map:nth-child(2) {
-  background-color: #132c4b;
+.btn {
+  background-color: var(--color-light--1);
+  grid-row: 4;
+  padding: 10px;
+  justify-self: center;
+  color: var(--color-dark--1);
+  width: 140px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-radius: 10px;
+}
+
+.btn:hover {
+  color: var(--color-light--2);
+  background-color: var(--color-dark--3);
+  transition: 0.5s;
+  font-weight: bold;
+}
+
+/* Map styling */
+#map {
+  flex-grow: 1; /* Map takes up remaining space */
+  background-color: var(--color-light--1);
 }
 
 .leaflet-popup .leaflet-popup-tip {
@@ -102,9 +150,11 @@ section {
   background-color: #2d3439;
   color: var(--color-light--2);
 }
+
 .leaflet-popup .leaflet-popup-content {
-  font-size: 1rem;
+  font-size: 1.4rem;
 }
+
 .working-popup .leaflet-popup-content-wrapper {
   border-left: 5px solid var(--color-brand--1);
 }
@@ -113,23 +163,41 @@ section {
   border-left: 5px solid var(--color-brand--2);
 }
 
-.form__btn {
-  padding: 10px;
-  justify-self: center;
-  background-color: #444;
-  color: #ddd;
-  width: 140px;
-  font-size: 16px;
-  border: none;
-  cursor: pointer;
-  text-transform: uppercase;
-  border-radius: 10px;
+.perform__icon {
+  font-size: 2.5rem;
+  margin-right: 0.2rem;
+  height: 0.28rem;
 }
-.form__btn:hover {
-  color: #444;
-  background-color: #ddd;
-  transition: 0.5s;
-  /* font-size: 19px; */
-  /* padding: 25px; */
-  font-weight: bold;
+
+.perform__details {
+  display: flex;
+  align-items: baseline;
+}
+
+.perform__value {
+  font-size: 1.4rem;
+  margin-right: 0.5rem;
+}
+
+.perform__unit {
+  font-size: 1.1rem;
+  color: var(--color-light--1);
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.perform {
+  background-color: var(--color-dark--2);
+  border-radius: 5px;
+  padding: 1.5rem 2.25rem;
+  margin-bottom: 1.75rem;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0.75rem 1.5rem;
+}
+
+.delete_all_btn {
+  padding: 5px;
+  margin-bottom: 6px;
 }
