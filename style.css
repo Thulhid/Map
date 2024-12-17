@@ -192,6 +192,7 @@ section {
   padding: 1.5rem 2.25rem;
   margin-bottom: 1.75rem;
   cursor: pointer;
+
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 0.75rem 1.5rem;
@@ -200,4 +201,16 @@ section {
 .delete_all_btn {
   padding: 5px;
   margin-bottom: 6px;
+}
+.close-modal {
+  /*  position: absolute; */
+  margin-left: 1.2rem;
+  align-self: self-start;
+  /*   top: 19.2px;
+  right: 32px; */
+  font-size: 2rem;
+  color: var(--color-brand--2);
+  cursor: pointer;
+  border: none;
+  background: none;
 }

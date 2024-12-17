@@ -1,6 +1,7 @@
 "use strict";
 
 const form = document.querySelector(".form");
+const containerPerform = document.querySelector(".performs");
 const inputDuration = document.querySelector(".form__input--duration");
 const inputDistance = document.querySelector(".form__input--distance");
 const inputCadence = document.querySelector(".form__input--cadence");
@@ -8,6 +9,7 @@ const inputDescription = document.querySelector(".form__input--description");
 const inputTitle = document.querySelector(".form__input--title");
 const inputType = document.querySelector(".form__input--type");
 const btnDeleteAll = document.querySelector(".delete_all_btn");
+
 class Perform {
   date = new Date();
   id = (Date.now() + "").slice(-10);
@@ -26,10 +28,6 @@ class Perform {
     )} on ${months[this.date.getMonth()]} ${this.date.getDate()}`;
   }
 }
-
-// const x = new Performer(1234, "Hiruna", 23, "running");
-// x._setDescription();
-// console.log(x);
 
 class Working extends Perform {
   type = "working";
@@ -51,7 +49,6 @@ class Running extends Perform {
   }
   _calcPace() {
     this.pace = this.duration / this.distance;
-
     return this.pace;
   }
 }
@@ -59,11 +56,17 @@ class App {
   #map;
   #performs = [];
   #mapEvent;
+  //#markers = {};
   constructor() {
     this._getPosition();
     form.addEventListener("submit", this._newPerform.bind(this));
     inputType.addEventListener("change", this._toggleFields);
     this._getLocalStorage();
+    containerPerform.addEventListener("click", this._moveToPopup.bind(this));
+    containerPerform.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("close-modal")) return;
+      this._deleteItem(e);
+    });
   }
   _getPosition() {
     if (navigator.geolocation) {
@@ -76,7 +79,6 @@ class App {
     }
   }
   _loadMap(position) {
-    console.log(position);
     const { latitude } = position.coords;
     const { longitude } = position.coords;
 
@@ -84,19 +86,23 @@ class App {
 
     //Info: assign value for #map
     this.#map = L.map("map").setView(coords, 15);
-    L.tileLayer("https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(this.#map);
+
     //Note: call _showForm
     this.#map.on("click", this._showForm.bind(this));
     this.#performs.forEach((perform) => this._renderPerformMarker(perform));
     if (this.#performs.length === 0) return;
     this._displayDeleteAll();
+    this.#map.on("popupopen", function (e) {
+      const popup = e.popup;
+      const popupNode = popup.getElement();
+    });
   }
 
   _toggleFields() {
-    console.dir(inputCadence);
     inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
     inputDistance.closest(".form__row").classList.toggle("form__row--hidden");
     inputDescription
@@ -161,8 +167,8 @@ class App {
     //Info: Display delete all button
     this._displayDeleteAll();
   }
-  _renderPerformMarker(performer) {
-    L.marker(performer.coords)
+  _renderPerformMarker(perform) {
+    const marker = L.marker(perform?.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -170,26 +176,27 @@ class App {
           minWidth: 150,
           autoClose: false,
           closeOnClick: false,
-          className: `${performer.type}-popup`,
+          className: `${perform.type}-popup`,
         })
       )
       .setPopupContent(
-        `${performer.type === "running" ? "🏃‍♂️" : "👨‍💻"} ${performer.info}`
+        `${perform.type === "running" ? "🏃‍♂️" : "👨‍💻"} ${perform.info}`
       )
       .openPopup();
-    console.log(this.#performs);
+    perform.marker = marker;
+    //this.#markers[perform.id] = marker;
   }
   _renderPerform(perform) {
     let html = `
     <li class="perform perform--${perform.type}" data-id="${perform.id}">
-          <h2 class="perform__title">${perform.info}</h2>
-          <div class="perform__details">
-            <span class="perform__icon">${
-              perform.type === "running" ? "🏃‍♂️" : "👨‍💻"
-            }</span>
+    <h2 class="perform__title">${perform.info}</h2>
+    <div class="perform__details">
+    <span class="perform__icon">${
+      perform.type === "running" ? "🏃‍♂️" : "👨‍💻"
+    }</span>
             <span class="perform__value">${perform.title}</span>
-          </div>
-          <div class="perform__details">
+            </div>
+            <div class="perform__details">
             <span class="perform__icon">⏱</span>
             <span class="perform__value">${perform.duration}</span>
             <span class="perform__unit">min</span>
@@ -198,12 +205,14 @@ class App {
     if (perform.type === "working") {
       const shortedDescription = perform.description.split(" ");
       const [value1, value2] = shortedDescription;
-      console.log(shortedDescription);
 
       html += `<div class="perform__details">
       <span class="perform__icon">📝</span>
        <span class="perform__value">${value1} ${value2}...</span>
-      </div> </li>`;
+       <input type="button" value="&times;" class="close-modal">
+       </div>
+
+      </li>`;
     }
     if (perform.type === "running")
       html += `
@@ -211,7 +220,9 @@ class App {
     <span class="perform__icon">🦶</span>
      <span class="perform__value">${perform.cadence}</span>
       <span class="perform__unit">spm</span>
+      <input type="button" value="&times;" class="close-modal">
       </div>
+
       <div class="perform__details">
     <span class="perform__icon">🏁</span>
      <span class="perform__value">${perform.distance}</span>
@@ -222,7 +233,12 @@ class App {
     btnDeleteAll.insertAdjacentHTML("afterend", html);
   }
   _localStorage() {
-    window.localStorage.setItem("perform", JSON.stringify(this.#performs));
+    const performsData = this.#performs.map((perform) => {
+      //Hack: Create a shallow copy excluding the marker property
+      const { marker, ...performData } = perform;
+      return performData;
+    });
+    window.localStorage.setItem("perform", JSON.stringify(performsData));
   }
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem("perform"));
@@ -230,6 +246,7 @@ class App {
     this.#performs = data;
     this.#performs.forEach((perform) => this._renderPerform(perform));
   }
+
   reset() {
     localStorage.removeItem("perform");
     window.location.reload();
@@ -237,6 +254,46 @@ class App {
   _displayDeleteAll() {
     btnDeleteAll.classList.remove("hidden");
     btnDeleteAll.addEventListener("click", this.reset);
+  }
+
+  _moveToPopup(e) {
+    const performEl = e.target.closest(".perform");
+    if (!performEl) return;
+    const perform = this.#performs.find(
+      (perform) => perform.id === performEl.dataset.id
+    );
+    if (!perform || !perform.coords) {
+      console.error("Invalid perform coordinates.");
+      return;
+    }
+    this.#map.setView(perform?.coords, 15, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+  }
+  _deleteItem(e) {
+    const performEl = e.target.closest(".perform");
+    if (!performEl) return;
+    //Note: Find and remove the perform object
+
+    const performIndex = this.#performs.findIndex((perform) => {
+      return perform.id === performEl.dataset.id;
+    });
+
+    const [removedPerform] = this.#performs.splice(performIndex, 1);
+    //Note: Remove the marker from the map
+    this.#map.removeLayer(removedPerform.marker);
+    // delete this.#markers[removedPerform.id];
+    //Note: remove perform on the UI
+    performEl.closest(".perform").remove();
+    //Note: Update local storage after deletion
+    this._localStorage();
+
+    if (this.#performs.length == 0) {
+      btnDeleteAll.classList.add("hidden");
+    }
   }
 }
 const app = new App();
