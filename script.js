@@ -1,6 +1,7 @@
 "use strict";
-
 const form = document.querySelector(".form");
+let btnFormEdit = document.querySelector(".btn__form__edit");
+const btnFormOk = document.querySelector(".btn__form__ok");
 const containerPerform = document.querySelector(".performs");
 const inputDuration = document.querySelector(".form__input--duration");
 const inputDistance = document.querySelector(".form__input--distance");
@@ -8,7 +9,7 @@ const inputCadence = document.querySelector(".form__input--cadence");
 const inputDescription = document.querySelector(".form__input--description");
 const inputTitle = document.querySelector(".form__input--title");
 const inputType = document.querySelector(".form__input--type");
-const btnDeleteAll = document.querySelector(".delete_all_btn");
+const btnDeleteAll = document.querySelector(".btn_delete_all");
 
 class Perform {
   date = new Date();
@@ -40,16 +41,10 @@ class Working extends Perform {
 
 class Running extends Perform {
   type = "running";
-  constructor(coords, title, duration, distance, cadence) {
+  constructor(coords, title, duration, distance) {
     super(coords, title, duration);
     this.distance = distance;
-    this.cadence = cadence;
     this._setInfo();
-    this._calcPace();
-  }
-  _calcPace() {
-    this.pace = this.duration / this.distance;
-    return this.pace;
   }
 }
 class App {
@@ -58,16 +53,34 @@ class App {
   #mapEvent;
   //#markers = {};
   constructor() {
+    console.log(this.#performs);
     this._getPosition();
-    form.addEventListener("submit", this._newPerform.bind(this));
+    btnFormOk.addEventListener("click", this._newPerform.bind(this));
     inputType.addEventListener("change", this._toggleFields);
     this._getLocalStorage();
     containerPerform.addEventListener("click", this._moveToPopup.bind(this));
     containerPerform.addEventListener("click", (e) => {
-      if (!e.target.classList.contains("close-modal")) return;
+      if (!e.target.classList.contains("btn_close")) return;
       this._deleteItem(e);
     });
+    containerPerform.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("btn_edit")) return;
+
+      const existingElements = document.querySelectorAll(
+        this.#performs.map((perform) => `[data-id="${perform.id}"]`).join(", ")
+      );
+      existingElements.forEach((element) => {
+        element.querySelector(".btn_edit").disabled = false;
+        element.querySelector(".btn_edit").style.opacity = 1;
+      });
+      e.target.disabled = true;
+      e.target.style.opacity = 0.5;
+      this._editItem(e);
+    });
+    if (this.#performs.length === 0) return;
+    this._displayDeleteAll();
   }
+
   _getPosition() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -94,8 +107,6 @@ class App {
     //Note: call _showForm
     this.#map.on("click", this._showForm.bind(this));
     this.#performs.forEach((perform) => this._renderPerformMarker(perform));
-    if (this.#performs.length === 0) return;
-    this._displayDeleteAll();
     this.#map.on("popupopen", function (e) {
       const popup = e.popup;
       const popupNode = popup.getElement();
@@ -103,12 +114,12 @@ class App {
   }
 
   _toggleFields() {
-    inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
     inputDistance.closest(".form__row").classList.toggle("form__row--hidden");
     inputDescription
       .closest(".form__row")
       .classList.toggle("form__row--hidden");
   }
+
   _showForm(mapE) {
     this.#mapEvent = mapE;
     form.classList.remove("hidden");
@@ -118,17 +129,31 @@ class App {
     inputTitle.value =
       inputDescription.value =
       inputDuration.value =
-      inputCadence.value =
       inputDistance.value =
         "";
     form.classList.add("hidden");
   }
+
   _newPerform(e) {
     e.preventDefault();
     let perform;
     const validInputs = (...inputs) =>
       inputs.every((inp) => Number.isFinite(inp));
     const allPositive = (...inputs) => inputs.every((inp) => inp > 0);
+
+    const wordsInRange = (words) => {
+      if (words.length > 35) return false;
+
+      return words.split(" ").reduce((acc, word) => {
+        if (word.length > 8) {
+          // Split long words into chunks of 10
+          let splitWord = word.match(/.{1,10}/g).join("\n");
+          return acc + splitWord + "\n";
+        }
+        return acc + word + "\n";
+      }, "");
+    };
+
     //Info: get data from form
     const type = inputType.value;
     const duration = +inputDuration.value;
@@ -138,21 +163,37 @@ class App {
     if (type === "working") {
       const description = inputDescription.value;
       //Info: Check if data is valid
-      if (!validInputs(duration) || !allPositive(duration))
-        return window.alert("Input have to be positive numbers!");
-      perform = new Working([lat, lng], title, duration, description);
+      if (
+        !this._checkValidNum(duration) ||
+        !this._checkValidWord(description) ||
+        !this._checkValidWord(title)
+      )
+        return window.alert(
+          "Input have to be positive numbers! & maximum 35 characters"
+        );
+      perform = new Working(
+        [lat, lng],
+        this._checkValidWord(title),
+        duration,
+        this._checkValidWord(description)
+      );
     }
     //Info: if running, running object
     if (type === "running") {
       const distance = +inputDistance.value;
-      const cadence = +inputCadence.value;
       //Info: Check if data is valid
       if (
-        !validInputs(duration, distance, cadence) ||
-        !allPositive(duration, distance, cadence)
+        !validInputs(duration, distance) ||
+        !allPositive(duration, distance) ||
+        !wordsInRange(title)
       )
         return window.alert("Input have to be positive numbers!");
-      perform = new Running([lat, lng], title, duration, distance, cadence);
+      perform = new Running(
+        [lat, lng],
+        wordsInRange(title),
+        duration,
+        distance
+      );
     }
     //Info: add new object to performs array
     this.#performs.push(perform);
@@ -163,9 +204,10 @@ class App {
     //Info: hide the form + clear input fields
     this._hideForm();
     //Info: Set Local storage to the all performs
-    this._localStorage();
+    this._setLocalStorage();
     //Info: Display delete all button
     this._displayDeleteAll();
+    console.log(this.#performs);
   }
   _renderPerformMarker(perform) {
     const marker = L.marker(perform?.coords)
@@ -187,6 +229,7 @@ class App {
     //this.#markers[perform.id] = marker;
   }
   _renderPerform(perform) {
+    const existingElement = document.querySelector(`[data-id="${perform.id}"]`);
     let html = `
     <li class="perform perform--${perform.type}" data-id="${perform.id}">
     <h2 class="perform__title">${perform.info}</h2>
@@ -203,36 +246,38 @@ class App {
           </div>
     `;
     if (perform.type === "working") {
-      const shortedDescription = perform.description.split(" ");
-      const [value1, value2] = shortedDescription;
 
       html += `<div class="perform__details">
       <span class="perform__icon">📝</span>
-       <span class="perform__value">${value1} ${value2}...</span>
-       <input type="button" value="&times;" class="close-modal">
+       <span class="perform__value"> ${perform.description} </span>
        </div>
-
+       <div class="perform__details">
+       <input type="button" value="delete" class="btn_close material-icons">
+       <input type="button" value="edit" class="btn_edit material-icons">
+       </div>
       </li>`;
     }
     if (perform.type === "running")
       html += `
       <div class="perform__details">
-    <span class="perform__icon">🦶</span>
-     <span class="perform__value">${perform.cadence}</span>
-      <span class="perform__unit">spm</span>
-      <input type="button" value="&times;" class="close-modal">
-      </div>
-
-      <div class="perform__details">
     <span class="perform__icon">🏁</span>
      <span class="perform__value">${perform.distance}</span>
       <span class="perform__unit">km</span>
       </div>
+      <div class="action__details">
+      <input type="button" value="delete" class="btn_close material-icons">
+      <input type="button" value="edit" class="btn_edit material-icons">
+      </div>
       </li>
     `;
-    btnDeleteAll.insertAdjacentHTML("afterend", html);
+
+    if (existingElement) {
+      existingElement.outerHTML = html;
+    } else {
+      btnDeleteAll.insertAdjacentHTML("afterend", html);
+    }
   }
-  _localStorage() {
+  _setLocalStorage() {
     const performsData = this.#performs.map((perform) => {
       //Hack: Create a shallow copy excluding the marker property
       const { marker, ...performData } = perform;
@@ -289,11 +334,108 @@ class App {
     //Note: remove perform on the UI
     performEl.closest(".perform").remove();
     //Note: Update local storage after deletion
-    this._localStorage();
+    this._setLocalStorage();
 
     if (this.#performs.length == 0) {
       btnDeleteAll.classList.add("hidden");
     }
   }
+  _checkValidNum(...inputs) {
+    return inputs.every((inp) => inp > 0 && Number.isFinite(inp));
+  }
+
+  _checkValidWord(...inputs) {
+    if (
+      !inputs.every((words) => typeof words === "string" && words.length < 35)
+    ) {
+      return false;
+    }
+    const validWord = inputs.map((words) => {
+      return words.split(" ").reduce((acc, word) => {
+        if (word.length > 8) {
+          // Split long words into chunks of 10
+          let splitWord = word.match(/.{1,10}/g).join("\n");
+          return acc + splitWord + "\n";
+        }
+        return acc + word + "\n";
+      }, "");
+    });
+
+    return String(validWord);
+  }
+
+  _editItem(e) {
+    const performEl = e.target.closest(".perform");
+    if (!performEl) return;
+
+    const performObj = this.#performs.find((perform) => {
+      return perform.id === performEl.dataset.id;
+    });
+
+    inputType.value = performObj.type;
+    inputDuration.value = performObj.duration;
+    inputTitle.value = performObj.title.replace(/\n/g, " ").trim();
+    console.log(typeof performObj.title); // Logs the type
+    console.log(performObj); // Logs the value
+
+    if (performObj.type === "working") {
+      inputDistance.closest(".form__row").classList.add("form__row--hidden");
+      inputDescription
+        .closest(".form__row")
+        .classList.remove("form__row--hidden");
+
+      inputDescription.value = performObj.description
+        .replace(/\n/g, " ")
+        .trim();
+    } else if (performObj.type === "running") {
+      inputDistance.closest(".form__row").classList.remove("form__row--hidden");
+      inputDescription.closest(".form__row").classList.add("form__row--hidden");
+      inputDistance.value = performObj.distance;
+    }
+
+    form.classList.remove("hidden");
+    inputType.disabled = true;
+    inputTitle.focus();
+    btnFormEdit.classList.remove("hidden");
+    btnFormOk.classList.add("hidden");
+
+    const handleEditClick = (ev) => {
+      ev.preventDefault();
+      e.target.disabled = true;
+      e.target.style.opacity = 1;
+
+      if (
+        !this._checkValidNum(+inputDuration.value) ||
+        !this._checkValidWord(inputTitle.value)
+      )
+        return window.alert(
+          "Input have to be positive numbers! & maximum 35 characters"
+        );
+      performObj.duration = +inputDuration.value;
+      performObj.title = this._checkValidWord(inputTitle.value);
+      if (performObj.type === "working") {
+        if (!this._checkValidWord(inputDescription.value))
+          return window.alert("Input have to be maximum 35 characters");
+        performObj.description = this._checkValidWord(inputDescription.value);
+      } else if (performObj.type === "running") {
+        if (!this._checkValidNum(+inputDistance.value))
+          return window.alert("Input have to be positive numbers!");
+        performObj.distance = this._checkValidNum(+inputDistance.value);
+      }
+
+      this._renderPerform(performObj);
+      this._hideForm();
+      inputType.disabled = false;
+      this._setLocalStorage();
+      btnFormEdit.classList.add("hidden");
+      btnFormOk.classList.remove("hidden");
+      btnFormEdit.removeEventListener("click", handleEditClick);
+    };
+    // Ensure there's only one event listener
+    btnFormEdit.replaceWith(btnFormEdit.cloneNode(true));
+    btnFormEdit = document.querySelector(".btn__form__edit");
+    btnFormEdit?.addEventListener("click", handleEditClick);
+  }
 }
+
 const app = new App();
