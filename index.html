@@ -4,14 +4,27 @@
     <meta charset="UTF-8" />
 
     <title>Document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link
+    <!-- <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
+    /> -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Alumni+Sans+Pinstripe:ital@0;1&family=Ysabeau+SC:wght@1..1000&display=swap"
+      rel="stylesheet"
     />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -77,14 +90,46 @@
             <button class="btn__form btn__form__ok">OK</button>
             <button class="btn__form btn__form__edit hidden">Edit</button>
           </form>
-          <input
-            class="hidden btn_delete_all material-icons"
-            type="button"
-            value="close"
-          />
+          <div class="side_icons">
+            <input
+              class="hidden btn_delete_all material-symbols-outlined"
+              type="button"
+              value="delete_history"
+            />
+            <select class="cmb cmb_sort hidden">
+              <option selected value="sort-by" class="cmb_option">
+                Sort by
+              </option>
+              <option value="distance-asc" class="cmb_option">
+                ▲ Distance-Asc
+              </option>
+              <option value="distance-desc" class="cmb_option">
+                ▼ Distance-Des
+              </option>
+            </select>
+            <select class="cmb cmb_group hidden" style="margin-left: 175px">
+              <option selected value="group by" class="cmb_option">
+                Group by
+              </option>
+              <option value="working" class="cmb_option">Working</option>
+              <option value="running" class="cmb_option">Running</option>
+            </select>
+          </div>
         </ul>
       </div>
+
       <div id="map"></div>
+      <div class="overlay hidden"></div>
+      <div class="modal hidden">
+        <button class="close_modal">&times;</button>
+        <h3 class="modal_title material-symbols-outlined"></h3>
+        <br />
+        <p class="modal_msg">
+          <em>delete</em>
+        </p>
+        <br />
+        <input type="button" value="DELETE" class="btn_modal btn__form" />
+      </div>
     </section>
   </body>
 </html>

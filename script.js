@@ -10,6 +10,15 @@ const inputDescription = document.querySelector(".form__input--description");
 const inputTitle = document.querySelector(".form__input--title");
 const inputType = document.querySelector(".form__input--type");
 const btnDeleteAll = document.querySelector(".btn_delete_all");
+const sideIcons = document.querySelector(".side_icons");
+const cmbSort = document.querySelector(".cmb_sort");
+const cmbGroup = document.querySelector(".cmb_group");
+const modal = document.querySelector(".modal");
+const modalTitle = document.querySelector(".modal_title");
+const modalMsg = document.querySelector(".modal_msg");
+const overlay = document.querySelector(".overlay");
+let btnModal = document.querySelector(".btn_modal");
+const btnModalClose = document.querySelector(".close_modal");
 
 class Perform {
   date = new Date();
@@ -53,11 +62,11 @@ class App {
   #mapEvent;
   //#markers = {};
   constructor() {
-    console.log(this.#performs);
     this._getPosition();
     btnFormOk.addEventListener("click", this._newPerform.bind(this));
     inputType.addEventListener("change", this._toggleFields);
     this._getLocalStorage();
+    cmbSort.addEventListener("change", this._sort.bind(this));
     containerPerform.addEventListener("click", this._moveToPopup.bind(this));
     containerPerform.addEventListener("click", (e) => {
       if (!e.target.classList.contains("btn_close")) return;
@@ -79,8 +88,12 @@ class App {
     });
     if (this.#performs.length === 0) return;
     this._displayDeleteAll();
+    this._toggleCmb(true);
+    cmbSort.addEventListener("change", this._sort.bind(this));
+    cmbGroup.addEventListener("change", this._group.bind(this));
+    containerPerform.addEventListener("mouseover", this._cmbOver);
+    containerPerform.addEventListener("mouseout", this._cmbOut);
   }
-
   _getPosition() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -124,6 +137,8 @@ class App {
     this.#mapEvent = mapE;
     form.classList.remove("hidden");
     inputTitle.focus();
+    this._toggleCmb(false);
+    btnDeleteAll.classList.add("hidden");
   }
   _hideForm() {
     inputTitle.value =
@@ -167,10 +182,16 @@ class App {
         !this._checkValidNum(duration) ||
         !this._checkValidWord(description) ||
         !this._checkValidWord(title)
-      )
-        return window.alert(
-          "Input have to be positive numbers! & maximum 35 characters"
+      ) {
+        this._toggleModal(
+          true,
+          "warning Invalid data",
+          "Input have to be positive numbers! & maximum 35 characters",
+          "Ok"
         );
+
+        return;
+      }
       perform = new Working(
         [lat, lng],
         this._checkValidWord(title),
@@ -186,8 +207,17 @@ class App {
         !validInputs(duration, distance) ||
         !allPositive(duration, distance) ||
         !wordsInRange(title)
-      )
-        return window.alert("Input have to be positive numbers!");
+      ) {
+        this._toggleModal(
+          true,
+          "warning Invalid data",
+          "Input have to be positive numbers! & maximum 35 characters",
+          "Ok"
+        );
+
+        //return window.alert("Input have to be positive numbers!");
+        return;
+      }
       perform = new Running(
         [lat, lng],
         wordsInRange(title),
@@ -207,7 +237,11 @@ class App {
     this._setLocalStorage();
     //Info: Display delete all button
     this._displayDeleteAll();
-    console.log(this.#performs);
+    //Info: Display sort and group dropdown
+    this._toggleCmb(true);
+
+    containerPerform.addEventListener("mouseover", this._cmbOver);
+    containerPerform.addEventListener("mouseout", this._cmbOut);
   }
   _renderPerformMarker(perform) {
     const marker = L.marker(perform?.coords)
@@ -234,39 +268,38 @@ class App {
     <li class="perform perform--${perform.type}" data-id="${perform.id}">
     <h2 class="perform__title">${perform.info}</h2>
     <div class="perform__details">
-    <span class="perform__icon">${
-      perform.type === "running" ? "🏃‍♂️" : "👨‍💻"
+    <span class="perform__icon material-symbols-outlined">${
+      perform.type === "running" ? "directions_run" : "business_center"
     }</span>
             <span class="perform__value">${perform.title}</span>
             </div>
             <div class="perform__details">
-            <span class="perform__icon">⏱</span>
+            <span class="perform__icon material-symbols-outlined">timelapse</span>
             <span class="perform__value">${perform.duration}</span>
             <span class="perform__unit">min</span>
           </div>
     `;
     if (perform.type === "working") {
-
       html += `<div class="perform__details">
-      <span class="perform__icon">📝</span>
+      <span class="perform__icon material-symbols-outlined">description</span>
        <span class="perform__value"> ${perform.description} </span>
        </div>
        <div class="perform__details">
-       <input type="button" value="delete" class="btn_close material-icons">
-       <input type="button" value="edit" class="btn_edit material-icons">
+       <input type="button" value="delete" class="btn_close material-symbols-outlined">
+       <input type="button" value="edit" class="btn_edit material-symbols-outlined">
        </div>
       </li>`;
     }
     if (perform.type === "running")
       html += `
       <div class="perform__details">
-    <span class="perform__icon">🏁</span>
+    <span class="perform__icon material-symbols-outlined">laps</span>
      <span class="perform__value">${perform.distance}</span>
       <span class="perform__unit">km</span>
       </div>
       <div class="action__details">
-      <input type="button" value="delete" class="btn_close material-icons">
-      <input type="button" value="edit" class="btn_edit material-icons">
+      <input type="button" value="delete" class="btn_close material-symbols-outlined">
+      <input type="button" value="edit" class="btn_edit material-symbols-outlined">
       </div>
       </li>
     `;
@@ -274,7 +307,7 @@ class App {
     if (existingElement) {
       existingElement.outerHTML = html;
     } else {
-      btnDeleteAll.insertAdjacentHTML("afterend", html);
+      sideIcons.insertAdjacentHTML("afterend", html);
     }
   }
   _setLocalStorage() {
@@ -294,11 +327,22 @@ class App {
 
   reset() {
     localStorage.removeItem("perform");
+    cmbSort.classList.add("hidden");
     window.location.reload();
   }
   _displayDeleteAll() {
     btnDeleteAll.classList.remove("hidden");
-    btnDeleteAll.addEventListener("click", this.reset);
+    btnDeleteAll.addEventListener("click", () => {
+      this._toggleModal(
+        true,
+        "delete Confirm deletion",
+        "Are you sure you want to delete all perform data?",
+        "Delete all"
+      );
+      btnModal.addEventListener("click", () => {
+        this.reset();
+      });
+    });
   }
 
   _moveToPopup(e) {
@@ -319,26 +363,39 @@ class App {
     });
   }
   _deleteItem(e) {
-    const performEl = e.target.closest(".perform");
-    if (!performEl) return;
-    //Note: Find and remove the perform object
+    this._toggleModal(
+      true,
+      "delete Confirm deletion",
+      "Are you sure you want to delete following perform data?",
+      "Delete"
+    );
 
-    const performIndex = this.#performs.findIndex((perform) => {
-      return perform.id === performEl.dataset.id;
-    });
+    const handleDeleteClick = () => {
+      const performEl = e.target.closest(".perform");
+      if (!performEl) return;
+      //Note: Find and remove the perform object
+      const performIndex = this.#performs.findIndex((perform) => {
+        return perform.id === performEl.dataset.id;
+      });
 
-    const [removedPerform] = this.#performs.splice(performIndex, 1);
-    //Note: Remove the marker from the map
-    this.#map.removeLayer(removedPerform.marker);
-    // delete this.#markers[removedPerform.id];
-    //Note: remove perform on the UI
-    performEl.closest(".perform").remove();
-    //Note: Update local storage after deletion
-    this._setLocalStorage();
+      const [removedPerform] = this.#performs.splice(performIndex, 1);
+      console.log(removedPerform);
+      //Note: Remove the marker from the map
+      this.#map.removeLayer(removedPerform?.marker);
+      // delete this.#markers[removedPerform.id];
+      //Note: remove perform on the UI
+      performEl.closest(".perform").remove();
+      //Note: Update local storage after deletion
+      this._setLocalStorage();
 
-    if (this.#performs.length == 0) {
-      btnDeleteAll.classList.add("hidden");
-    }
+      if (this.#performs.length == 0) {
+        btnDeleteAll.classList.add("hidden");
+      }
+      btnModal.removeEventListener("click", handleDeleteClick);
+    };
+    btnModal.replaceWith(btnModal.cloneNode(true));
+    btnModal = document.querySelector(".btn_modal");
+    btnModal?.addEventListener("click", handleDeleteClick);
   }
   _checkValidNum(...inputs) {
     return inputs.every((inp) => inp > 0 && Number.isFinite(inp));
@@ -375,8 +432,6 @@ class App {
     inputType.value = performObj.type;
     inputDuration.value = performObj.duration;
     inputTitle.value = performObj.title.replace(/\n/g, " ").trim();
-    console.log(typeof performObj.title); // Logs the type
-    console.log(performObj); // Logs the value
 
     if (performObj.type === "working") {
       inputDistance.closest(".form__row").classList.add("form__row--hidden");
@@ -398,7 +453,8 @@ class App {
     inputTitle.focus();
     btnFormEdit.classList.remove("hidden");
     btnFormOk.classList.add("hidden");
-
+    this._toggleCmb(false);
+    btnDeleteAll.classList.add("hidden");
     const handleEditClick = (ev) => {
       ev.preventDefault();
       e.target.disabled = true;
@@ -407,19 +463,43 @@ class App {
       if (
         !this._checkValidNum(+inputDuration.value) ||
         !this._checkValidWord(inputTitle.value)
-      )
-        return window.alert(
-          "Input have to be positive numbers! & maximum 35 characters"
+      ) {
+        this._toggleModal(
+          true,
+          "warning Invalid data",
+          "Input have to be positive numbers! & maximum 35 characters",
+          "Ok"
         );
+        btnModal.classList.add("btn__form__edit");
+        modal.style.height = "22rem";
+        modal.addEventListener("click", (e) => {
+          if (e.target.classList.contains("btn_modal")) {
+            btnModal.classList.remove("btn__form__edit");
+          } else if (e.target.classList.contains("close_modal")) {
+            btnModal.classList.remove("btn__form__edit");
+          }
+        });
+        return;
+      }
       performObj.duration = +inputDuration.value;
       performObj.title = this._checkValidWord(inputTitle.value);
       if (performObj.type === "working") {
         if (!this._checkValidWord(inputDescription.value))
-          return window.alert("Input have to be maximum 35 characters");
+          return this._toggleModal(
+            true,
+            "warning Invalid data",
+            "Input have to be maximum 35 characters",
+            "Ok"
+          );
         performObj.description = this._checkValidWord(inputDescription.value);
       } else if (performObj.type === "running") {
         if (!this._checkValidNum(+inputDistance.value))
-          return window.alert("Input have to be positive numbers!");
+          return this._toggleModal(
+            true,
+            "warning Invalid data",
+            "Input have to be positive numbers!",
+            "Ok"
+          );
         performObj.distance = this._checkValidNum(+inputDistance.value);
       }
 
@@ -429,12 +509,112 @@ class App {
       this._setLocalStorage();
       btnFormEdit.classList.add("hidden");
       btnFormOk.classList.remove("hidden");
+      this._toggleCmb(true);
+      btnDeleteAll.classList.remove("hidden");
       btnFormEdit.removeEventListener("click", handleEditClick);
     };
     // Ensure there's only one event listener
     btnFormEdit.replaceWith(btnFormEdit.cloneNode(true));
     btnFormEdit = document.querySelector(".btn__form__edit");
     btnFormEdit?.addEventListener("click", handleEditClick);
+  }
+
+  _sort() {
+    if (cmbSort.value === "distance") {
+      this._getLocalStorage();
+    }
+
+    if (cmbSort.value === "distance-asc")
+      this.#performs.sort((a, b) => b.duration - a.duration);
+    else if (cmbSort.value === "distance-desc")
+      this.#performs.sort((a, b) => a.duration - b.duration);
+
+    const performContainer = document.querySelectorAll(".perform");
+
+    if (performContainer)
+      performContainer.forEach((perform) => perform.remove());
+    this.#performs.forEach((perform) => this._renderPerform(perform));
+  }
+  _group() {
+    if (cmbGroup.value === "group by") {
+      this._getLocalStorage();
+    } else if (cmbGroup.value === "working") {
+      this._getLocalStorage();
+
+      this.#performs = this.#performs.filter(
+        (perform) => perform.type === "working"
+      );
+    } else if (cmbGroup.value === "running") {
+      this._getLocalStorage();
+
+      this.#performs = this.#performs.filter(
+        (perform) => perform.type === "running"
+      );
+    }
+    const performContainer = document.querySelectorAll(".perform");
+
+    if (performContainer)
+      performContainer.forEach((perform) => perform.remove());
+    this.#performs.forEach((perform) => this._renderPerform(perform));
+    cmbGroup.removeEventListener("focus", this._group.bind(this));
+  }
+  _cmbOver(e) {
+    if (
+      !e.target.classList.contains("cmb_group") &&
+      !e.target.classList.contains("cmb_sort")
+    )
+      return;
+
+    if (e.target.classList.contains("cmb_group")) {
+      const groupSelectedOption = cmbGroup.options[0];
+      groupSelectedOption.text = "default";
+    }
+    if (e.target.classList.contains("cmb_sort")) {
+      const sortSelectedOption = cmbSort.options[0];
+      sortSelectedOption.text = "default";
+    }
+    [...cmbGroup.options].forEach((option) => {
+      option.disabled = false;
+    });
+  }
+  _cmbOut() {
+    const groupSelectedOption = cmbGroup.options[0];
+    groupSelectedOption.text = "Group by";
+    const sortSelectedOption = cmbSort.options[0];
+    sortSelectedOption.text = "Sort by";
+    [...cmbGroup.options].forEach((option) => {
+      option.disabled = true;
+    });
+  }
+
+  _toggleCmb(isOpen) {
+    if (isOpen) {
+      cmbSort.classList.remove("hidden");
+      cmbGroup.classList.remove("hidden");
+    } else {
+      cmbSort.classList.add("hidden");
+      cmbGroup.classList.add("hidden");
+    }
+  }
+  _toggleModal(isOpen, title, msg, btnValue) {
+    if (isOpen) {
+      modal.classList.remove("hidden");
+      overlay.classList.remove("hidden");
+      modalTitle.textContent = title;
+      modalMsg.textContent = msg;
+      btnModal.value = btnValue;
+      modal.addEventListener("click", (e) => {
+        if (e.target.classList.contains("btn_modal")) {
+          this._toggleModal(false);
+        } else if (e.target.classList.contains("close_modal")) {
+          this._toggleModal(false);
+        }
+      });
+    } else {
+      modal.classList.add("hidden");
+      overlay.classList.add("hidden");
+      modal.style.height = "";
+    }
   }
 }
 
