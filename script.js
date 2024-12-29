@@ -19,6 +19,8 @@ const modalMsg = document.querySelector(".modal_msg");
 const overlay = document.querySelector(".overlay");
 let btnModal = document.querySelector(".btn_modal");
 const btnModalClose = document.querySelector(".close_modal");
+const btnShowAllPerforms = document.querySelector(".show_all_performs");
+const drawControl = document.querySelector(".draw_control");
 
 class Perform {
   date = new Date();
@@ -60,6 +62,7 @@ class App {
   #map;
   #performs = [];
   #mapEvent;
+  #drawnItems;
   //#markers = {};
   constructor() {
     this._getPosition();
@@ -93,6 +96,11 @@ class App {
     cmbGroup.addEventListener("change", this._group.bind(this));
     containerPerform.addEventListener("mouseover", this._cmbOver);
     containerPerform.addEventListener("mouseout", this._cmbOut);
+    btnShowAllPerforms.addEventListener(
+      "click",
+      this._showAllPerforms.bind(this)
+    );
+    drawControl.addEventListener("click", this._drawControl.bind(this));
   }
   _getPosition() {
     if (navigator.geolocation) {
@@ -240,6 +248,7 @@ class App {
     //Info: Display sort and group dropdown
     this._toggleCmb(true);
 
+    console.log(this.#performs);
     containerPerform.addEventListener("mouseover", this._cmbOver);
     containerPerform.addEventListener("mouseout", this._cmbOut);
   }
@@ -320,9 +329,17 @@ class App {
   }
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem("perform"));
+    const dataDraw = JSON.parse(localStorage.getItem("drawnShapes"));
+    //console.log(dataDraw);
     if (!data) return;
     this.#performs = data;
     this.#performs.forEach((perform) => this._renderPerform(perform));
+    // if (!dataDraw) return;
+    // L.geoJSON(dataDraw).eachLayer((layer) => {
+    //   this.#drawnItems?.addLayer(layer);
+    // });
+    // this.#map?.addLayer(this.#drawnItems);
+    // console.log(this.#drawnItems);
   }
 
   reset() {
@@ -615,6 +632,43 @@ class App {
       overlay.classList.add("hidden");
       modal.style.height = "";
     }
+  }
+  _showAllPerforms() {
+    const markers = this.#performs.map((perform) => perform.marker._latlng);
+    const bounds = L.latLngBounds(markers);
+    this.#map.fitBounds(bounds);
+  }
+  _drawControl() {
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polyline: true, // Enable drawing lines
+        polygon: true, // Enable drawing polygons
+        rectangle: true, // Enable drawing rectangles
+        circle: true, // Enable drawing circles
+        marker: true, // Enable adding markers
+      },
+      edit: {
+        featureGroup: new L.FeatureGroup().addTo(this.#map),
+      },
+    });
+    this.#map.addControl(drawControl);
+    this.#drawnItems = new L.FeatureGroup();
+
+    this.#map.on("draw:created", (event) => {
+      console.log(event);
+
+      this.#map.addLayer(this.#drawnItems);
+
+      this.#drawnItems.addLayer(event.layer);
+      // const data = this.#drawnItems.toGeoJSON();
+      //localStorage.setItem("drawnShapes", JSON.stringify(data));
+
+      // if (event.layerType === "polyline" || event.layerType === "polygon") {
+      //   console.log("Coordinates:", layer.getLatLngs());
+      // } else if (event.layerType === "marker") {
+      //   console.log("Coordinates:", layer.getLatLng());
+      // }
+    });
   }
 }
 

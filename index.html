@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
 
     <title>Document</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"
+    />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
@@ -31,20 +36,40 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
+    <!--  <script
+      defer
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="script.js"></script> -->
+    <!-- Leaflet Core -->
     <script
       defer
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
+
+    <!-- Leaflet.draw Plugin -->
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"
+    ></script>
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css" />
+
+    <!-- Custom Script -->
     <script defer src="script.js"></script>
   </head>
   <body>
     <section>
       <div class="sidebar">
         <div class="logo">
-          <img src="map.png" alt="Logo" />
+          <img src="image.png" alt="Logo" />
           <h1>MapMate</h1>
         </div>
 
@@ -130,6 +155,16 @@
         <br />
         <input type="button" value="DELETE" class="btn_modal btn__form" />
       </div>
+      <input
+        type="button"
+        value="center_focus_strong"
+        class="show_all_performs material-symbols-outlined map_icons"
+      />
+      <input
+        type="button"
+        value="shape_line"
+        class="draw_control material-symbols-outlined map_icons"
+      />
     </section>
   </body>
 </html>

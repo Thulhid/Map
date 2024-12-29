@@ -32,15 +32,15 @@ body {
   display: flex;
 }
 img {
-  height: 5.2rem;
-  margin-left: 2.3rem;
+  height: 6.2rem;
+  margin-left: 3.7rem;
 }
 
 h1 {
-  font-family: "Alumni Sans Pinstripe", serif;
-  font-weight: 900;
+  font-family: inherit;
   font-style: normal;
-  font-size: 36px;
+  font-size: 20px;
+  margin-left: 28px;
 }
 
 /* Main layout */
@@ -63,8 +63,7 @@ section {
 }
 
 .logo {
-  margin-bottom: 10px;
-  height: 5.2rem;
+  height: 6.2rem;
   align-self: center;
 }
 
@@ -149,6 +148,7 @@ section {
 
 /* Map styling */
 #map {
+  z-index: 1;
   flex-grow: 1; /* Map takes up remaining space */
   background-color: var(--color-light--1);
 }
@@ -310,7 +310,7 @@ section {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(3px);
-  z-index: 5;
+  z-index: 0;
 }
 .modal {
   font-family: var(--third-font);
@@ -360,4 +360,28 @@ section {
 }
 .delete_modal:hover {
   font-weight: normal;
+}
+.map_icons {
+  z-index: 2;
+  position: absolute;
+  right: 3rem;
+  bottom: 4rem;
+  border-radius: 2rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  background-color: var(--color-dark--1);
+  border: none;
+  outline: none;
+  color: var(--color-light--2);
+  font-size: medium;
+}
+
+.map_icons:hover {
+  color: var(--color-light--1);
+  transition: 0.5s;
+}
+.draw_control {
+  right: 3rem;
+  bottom: 7.7rem;
+  font-size: medium;
 }
